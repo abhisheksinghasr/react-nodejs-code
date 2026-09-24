@@ -9,6 +9,11 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: node-project
+  IMAGE_TAG: ${{ github.sha }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,34 +26,17 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ap-south-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
+      - name: Build, tag, and push Docker image
         run: |
-          docker build -t myimage:latest .
+          IMAGE_URI=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
 
-      - name: Push image to ECR
-        run: |
-          docker tag myimage:latest \
-            ${{ steps.ecr.outputs.registry }}/test-varinder:latest
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
 
-          docker push \
-            ${{ steps.ecr.outputs.registry }}/test-varinder:latest
-
-      - name: Deploy to EC2
-        run: |
-          aws ssm send-command \
-            --instance-ids "i-0d7f8728e9aaee515" \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=[
-              "aws ecr get-login-password --region ap-south-1 | sudo docker login --username AWS --password-stdin 010928211341.dkr.ecr.ap-south-1.amazonaws.com",
-              "sudo docker pull 010928211341.dkr.ecr.ap-south-1.amazonaws.com/test-varinder:latest",
-              "sudo docker stop myapp || true",
-              "sudo docker rm myapp || true",
-              "sudo docker run -d --name myapp -p 8080:80 010928211341.dkr.ecr.ap-south-1.amazonaws.com/test-varinder:latest"
-            ]' \
-            --region ap-south-1
+          echo "Image pushed: $IMAGE_URI"
