@@ -14,16 +14,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::010928211341:role/OIDC-Node-react
+          role-to-assume: arn:aws:iam::010928211341:role/github-oidc-role-node
           aws-region: ap-south-1
           role-session-name: github-actions
 
-      - name: Verify
+      - name: Verify AWS Identity
         run: aws sts get-caller-identity
-
