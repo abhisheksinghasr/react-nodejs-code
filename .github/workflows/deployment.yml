@@ -21,7 +21,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::010928211341:role/OIDC-Node-react
-          aws-region: us-east-1
+          aws-region: ap-south-1
           role-session-name: github-actions
 
       - name: Verify
