@@ -20,10 +20,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>
+          role-to-assume: arn:aws:iam::010928211341:role/OIDC-Node-react
           aws-region: us-east-1
+          role-session-name: github-actions
 
       - name: Verify
         run: aws sts get-caller-identity
-#test
-      
