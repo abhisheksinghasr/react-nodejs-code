@@ -13,6 +13,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: ap-south-1
+      ECR_REPOSITORY: 010928211341.dkr.ecr.ap-south-1.amazonaws.com/node-project
+      IMAGE_TAG: latest   # or use ${{ github.sha }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -22,7 +27,13 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::010928211341:role/github-oidc-role-node
           aws-region: ap-south-1
-          role-session-name: github-actions
 
-      - name: Verify AWS Identity
-        run: aws sts get-caller-identity
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build + Push in one go
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_URI=$ECR_REPOSITORY:$IMAGE_TAG
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
