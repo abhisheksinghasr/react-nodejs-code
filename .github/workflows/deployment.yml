@@ -31,9 +31,24 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Build + Push in one go
       - name: Build and Push Docker Image
         run: |
           IMAGE_URI=$ECR_REPOSITORY:$IMAGE_TAG
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
+
+      # Deploy to Ec2 Server
+      - name: Deploy to EC2 via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "i-0400ed6c038fa616a" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy latest Docker image" \
+            --parameters commands='[
+              "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 010928211341.dkr.ecr.ap-south-1.amazonaws.com",
+              "docker pull 010928211341.dkr.ecr.ap-south-1.amazonaws.com/node-project:latest",
+              "docker stop node-app || true",
+              "docker rm node-app || true",
+              "docker run -d -p 80:80 --name node-app --restart always 010928211341.dkr.ecr.ap-south-1.amazonaws.com/node-project:latest"
+            ]' \
+            --region ap-south-1
